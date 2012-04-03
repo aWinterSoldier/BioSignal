@@ -88,8 +88,8 @@ class EogDataPreparator(DataPreparator):
         """
         """
         super(EogDataPreparator, self).__init__(options,
-                5,
-                5,
+                4,
+                4,
                 filters)
         self._bipolar = bipolar
 

@@ -76,5 +76,5 @@ if __name__ == '__main__':
    #         ylabel = "magnitude [(uV s) ^ 2]",
    #         title = "EMG spectrum")
 
-    print eog_analyser.get_decisions(window = 0.3, window_seconds = True, jump = 500)
+    print eog_analyser.get_decisions(window = 0.3, window_seconds = True, jump = 200)
     plotter.show()
