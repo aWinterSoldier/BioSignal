@@ -59,3 +59,15 @@ class HighpassFilter(AbstractSignalFilter):
 
         self.b = b
         self.a = a
+
+class LowpassFilter(AbstractSignalFilter):
+    """
+    """
+    def __init__(self, frequency, threshold):
+        """
+        """
+        fn = frequency / 2.0
+        b, a = cheby2(1, 10, threshold / fn, btype = "lowpass")
+
+        self.b = b
+        self.a = a

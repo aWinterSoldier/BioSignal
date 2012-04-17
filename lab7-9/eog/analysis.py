@@ -96,6 +96,11 @@ class SignalAnalyser(object):
         """
         return np.mean(data), np.std(data)
 
+    def get_last_and_range(self, data):
+        """
+        """
+        return np.argmax(data) - np.argmin(data), \
+            np.max(data) - np.min(data)
 
 class EogAnalyser(SignalAnalyser):
     """
@@ -130,43 +135,45 @@ class EogAnalyser(SignalAnalyser):
 
         hvalues = []
         vvalues = []
-        hmeans  = []
-        vmeans  = []
+        hlasts  = []
+        vlasts  = []
         times = []
         for i in xrange(start, end, step):
             hpart = hor[i - diameter:i + diameter]
             vpart = ver[i - diameter:i + diameter]
 
-            times.append(i / self._frequency)
-            hmean, hstd = self.get_mean_std(hpart)
-            vmean, vstd = self.get_mean_std(vpart)
-            hvalues.append(hstd)
-            vvalues.append(vstd)
-            hmeans.append(hmean)
-            vmeans.append(vmean)
+            times.append(i / self._frequency + self._start_time)
+            hlast, hrange = self.get_last_and_range(hpart)
+            vlast, vrange = self.get_last_and_range(vpart)
+            hvalues.append(hrange)
+            vvalues.append(vrange)
+            hlasts.append(hlast)
+            vlasts.append(vlast)
 
-        print hvalues
-        print vvalues
+        def printf(x):
+            print x
+        map(printf, [x for x in zip(times, hvalues, vvalues)])
 
         decisions = []
-        difference   = min_sec_diff * self._frequency
-        last_v = -difference - 1
-        last_h = -difference - 1
-        for i in xrange(1, len(times)):
+        difference = min_sec_diff * self._frequency
+        last = -difference - 1
+        for i in xrange(len(times)):
             time = times[i]
 
-            if hvalues[i] - hvalues[i - 1] > jump and i - difference > last_h:
-                last_h = i
-                if hmeans[i] > hmeans[i - 1]:
-                    decisions.append(("l", time))
-                else:
+            if hvalues[i] > jump \
+                    and i - last > difference / step:
+                last = i
+                if hlasts[i] > 0:
                     decisions.append(("r", time))
-
-            if vvalues[i] - vvalues[i - 1] > jump and i - difference > last_v:
-                last_v = i
-                if vmeans[i] > vmeans[i - 1]:
-                    decisions.append(("u", time))
                 else:
+                    decisions.append(("l", time))
+
+            if vvalues[i] > jump \
+                    and i - last > difference / step:
+                last = i
+                if vlasts[i] > 0:
                     decisions.append(("d", time))
+                else:
+                    decisions.append(("u", time))
 
         return decisions

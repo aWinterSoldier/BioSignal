@@ -65,7 +65,8 @@ class DataPreparator(object):
                 for filt in self._filters:
                     channel = filt.run(channel)
             return channel
-
+        for x in enumerate(self.cut_channels):
+            print x
         self.cut_channels = [apply_all(c, ix + 1) for ix, c in enumerate(self.cut_channels)]
 
     def prepare_timeline(self):
@@ -83,47 +84,23 @@ class EogDataPreparator(DataPreparator):
     """
     def __init__(self,
             options,
-            filters = [],
-            bipolar = True):
+            filters = []):
         """
         """
         super(EogDataPreparator, self).__init__(options,
-                4,
-                4,
+                2,
+                2,
                 filters)
-        self._bipolar = bipolar
-
-    def _monopolar_montage(self):
-        """
-        """
-        left  = self.cut_channels[0]
-        right = self.cut_channels[1]
-        up    = self.cut_channels[2]
-        down  = self.cut_channels[3]
-        ear   = self.cut_channels[4]
-
-        return [left - ear,
-                right - ear,
-                up - ear,
-                down - ear]
 
     def _bipolar_montage(self):
         """
         """
-        left  = self.cut_channels[0]
-        right = self.cut_channels[1]
-        up    = self.cut_channels[2]
-        down  = self.cut_channels[3]
-
-        return [left - right, up - down]
+        return self.cut_channels
 
     def montage_signal_set(self):
         """
         """
-        if self._bipolar:
-            montage = self._bipolar_montage()
-        else:
-            montage = self._monopolar_montage()
+        montage = self._bipolar_montage()
         return SignalSet(montage,
                 self.prepare_timeline(),
                 self._channel_number)

@@ -4,7 +4,7 @@
 from optparse import OptionParser
 from sys import exit
 
-from filter import BandpassFilter, BandstopFilter
+from filter import BandpassFilter, BandstopFilter, LowpassFilter, HighpassFilter
 from data import EogDataPreparator
 from plotting import SignalPlotter
 from analysis import EogAnalyser
@@ -35,7 +35,7 @@ if __name__ == '__main__':
             "--frequency",
             dest = "frequency",
             type = "float",
-            default = 2048.0,
+            default = 256.0,
             help = "Data registration frequency.")
     bipolar = True
 
@@ -49,11 +49,9 @@ if __name__ == '__main__':
 
     ## construct main agents
     eog_analyser    = EogAnalyser(options.frequency, options.start_time)
-    low_stop        = BandstopFilter(options.frequency, [0, 0.5])
-    power_stop      = BandstopFilter(options.frequency, [49, 51])
+    high_pass       = HighpassFilter(options.frequency, 0.1)
     data_preparator = EogDataPreparator(options,
-            [],
-            bipolar = bipolar)
+            [high_pass])
     data_preparator.load_file()
     plotter      = SignalPlotter(data_preparator.prepare_timeline())
 
@@ -76,5 +74,8 @@ if __name__ == '__main__':
    #         ylabel = "magnitude [(uV s) ^ 2]",
    #         title = "EMG spectrum")
 
-    print eog_analyser.get_decisions(window = 0.3, window_seconds = True, jump = 200)
+    print eog_analyser.get_decisions(window = 0.3,
+            window_seconds = True,
+            jump = 1200,
+            min_sec_diff = 1.5)
     plotter.show()
