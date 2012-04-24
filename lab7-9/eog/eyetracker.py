@@ -10,15 +10,30 @@ from configs import settings, variables_pb2
 from interfaces import interfaces_logging as logger
 #LOGGER = logger.get_logger("sample_analysis", "info")
 LOGGER = logger.get_logger("sample_analysis", "debug")
- 
+
+from lib.loader import DataLoader
+from lib.filter import BandpassFilter, BandstopFilter, LowpassFilter, HighpassFilter
+from lib.analysis import EogAnalyser
+from lib.plotting import SignalPlotter
+
 class SampleAnalysis(ConfiguredMultiplexerServer):
     """A class responsible for handling signal message and making proper decision.
     The class inherits from generic class for convinience - all technical stuff
     is being done in this super-class"""
-    def __init__(self, addresses):
+    def __init__(self, addresses, frequency, window):
         """Initialization - super() and ready() calls are required..."""
         super(SampleAnalysis, self).__init__(addresses=addresses,
                                           type=peers.ANALYSIS)
+                                          
+        self.eog_analyser = EogAnalyser(frequency, 0)
+        high_pass         = HighpassFilter(frequency, 0.1)
+        self.data_loader       = DataLoader([high_pass],
+                2,
+                frequency)
+    
+        self.data_loader.set_window(window)
+        self.plotter      = SignalPlotter(self.data_loader.prepare_timeline())
+                                          
         self.ready()
         LOGGER.info("Sample analysis init finished!")
  
@@ -30,28 +45,29 @@ class SampleAnalysis(ConfiguredMultiplexerServer):
  
             # Messages are transmitted in bunches so lets define SampleVector
             # in order to unpack bunch of Sample messages ...
-        l_vect = variables_pb2.SampleVector()
+            l_vect = variables_pb2.SampleVector()
             l_vect.ParseFromString(mxmsg.message)
  
             # Now we have message unpacked, lets iterate over every sample ...
             for s in l_vect.samples:
- 
-                # Every sample has two fields:
+                 # Every sample has two fields:
                 # timestamp - system clock time of a moment of Sample`s creation
                 # channels - a list of values - one for every channel
-                LOGGER.debug("Got sample with timestamp: "+str(s.timestamp))
+                #LOGGER.debug("Got sample with timestamp: "+str(s.timestamp))
  
                 # One can copy samples to numpy array ...
  
                 a = numpy.array(s.channels) # w tym miejscu mamy w tablicy a "paczke" próbek (domyślnie 4próbki ) ze wszystkich zadeklarowanych kanalow 
-#################### TU TRZEBA WPISAC SWOJ KOD BUFOROWANIA i ANALIZY  ##############
-                print a #na dobry poczatek wypiszmy probki
- 
-####################################################################
- 
-                # Or just iterate over values ...
-                for ch in s.channels:
-                    LOGGER.debug(ch)
+                self.data_loader.load_pack(a)
+                signal = self.data_loader.get_signal_set()
+
+                if signal:
+                    self.eog_analyser.load_signal_set(signal)
+                    print self.eog_analyser.get_decisions(window = 10,
+                            window_seconds = False,
+                            jump = 1200,
+                            min_sec_diff = 1.5)
+                    #time.sleep(5)
  
             # Having a new bunch of values one can fire some magic analysis and 
             # generate decision ....
@@ -76,4 +92,4 @@ class SampleAnalysis(ConfiguredMultiplexerServer):
  
 if __name__ == "__main__":
     # Initialize and run an object in order to have your analysis up and running
-    SampleAnalysis(settings.MULTIPLEXER_ADDRESSES).loop()
+    SampleAnalysis(settings.MULTIPLEXER_ADDRESSES, 256, 512).loop()

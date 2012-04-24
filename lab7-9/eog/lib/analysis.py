@@ -4,6 +4,8 @@
 import numpy as np
 import math
 
+from time import sleep
+
 class SignalAnalyser(object):
     """
     Class responsible for signal analysis.
@@ -152,7 +154,7 @@ class EogAnalyser(SignalAnalyser):
 
         def printf(x):
             print x
-        map(printf, [x for x in zip(times, hvalues, vvalues)])
+        #map(printf, [x for x in zip(times, hvalues, vvalues)])
 
         decisions = []
         difference = min_sec_diff * self._frequency
