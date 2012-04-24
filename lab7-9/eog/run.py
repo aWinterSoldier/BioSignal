@@ -4,10 +4,10 @@
 from optparse import OptionParser
 from sys import exit
 
-from filter import BandpassFilter, BandstopFilter, LowpassFilter, HighpassFilter
-from data import EogDataPreparator
-from plotting import SignalPlotter
-from analysis import EogAnalyser
+from lib.filter import BandpassFilter, BandstopFilter, LowpassFilter, HighpassFilter
+from lib.data import EogDataPreparator
+from lib.plotting import SignalPlotter
+from lib.analysis import EogAnalyser
 
 if __name__ == '__main__':
     # configure option parser
