@@ -169,7 +169,6 @@ class EogAnalyser(SignalAnalyser):
                     decisions.append(("r", time))
                 else:
                     decisions.append(("l", time))
-
             if vvalues[i] > jump \
                     and i - last > difference / step:
                 last = i

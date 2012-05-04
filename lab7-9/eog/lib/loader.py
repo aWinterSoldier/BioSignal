@@ -22,7 +22,10 @@ class DataLoader(object):
         self.data_filter    = []
         self.signal_set     = None
         self.window         = 128
+        self.leftover       = 16
         self.ready          = False
+
+        self.time           = 0.0
 
         for i in xrange(channel_number):
             self.data_buffer.append(np.array([]))
@@ -32,6 +35,11 @@ class DataLoader(object):
         """
         self.window = window
 
+    def set_leftover(self, leftover):
+        """
+        """
+        self.leftover = leftover
+        
     def load_pack(self, pack):
         """
         """
@@ -41,6 +49,8 @@ class DataLoader(object):
                     np.array([val])))
             channel += 1
             channel %= self.channel_number
+            if channel % self.channel_number == 0:
+                self.time += 1.0 / self.frequency
 
         all_done = True
         for c in xrange(self.channel_number):
@@ -55,9 +65,15 @@ class DataLoader(object):
         """
         signal_set = None
         if self.ready:
+            self.ready = False
+
             self.data_filter = self.data_buffer
             self.apply_filters()
             signal_set = self.montage_signal_set()
+
+            for c in xrange(self.channel_number):
+                self.data_buffer[c] = self.data_buffer[c][-self.leftover:]
+
         return signal_set
 
     def apply_filters(self, exclude = []):
@@ -75,12 +91,12 @@ class DataLoader(object):
         """
         Sets the timeline variable to an X axis timeline array.
         """
-        start = 0
-        end   = self.window // self.frequency
+        start = self.time - float(self.window) / self.frequency
+        end   = self.time
         ticks = 1.0 / self.frequency
 
         return np.arange(start, end, ticks)
-        
+
     def _bipolar_montage(self):
         """
         """
@@ -93,3 +109,4 @@ class DataLoader(object):
         return SignalSet(montage,
                 self.prepare_timeline(),
                 self.channel_number)
+

@@ -1,4 +1,4 @@
-#! /usrbin/python
+#! /usr/bin/python
 # -*- coding: utf-8 -*-
 
 import numpy as np
@@ -132,3 +132,4 @@ class SignalSet:
         Returns the timeline for the experiment.
         """
         return _timeline
+
