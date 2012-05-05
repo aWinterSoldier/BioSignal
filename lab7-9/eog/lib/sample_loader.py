@@ -25,6 +25,6 @@ class FileLoader(DataPreparator):
 
         sample = self.to_fetch[:self._channel_number]
         self.to_fetch = self.to_fetch[self._channel_number:]
-        sleep(0.01)
+        sleep(0.001)
         return sample
 

@@ -11,6 +11,7 @@ from lib.loader import DataLoader
 from lib.filter import BandpassFilter, BandstopFilter, LowpassFilter, HighpassFilter
 from lib.analysis import EogAnalyser
 from lib.plotting import SignalPlotter
+from lib.tracker import EyeTracker
 
 if __name__ == "__main__":
     parser = OptionParser()
@@ -57,6 +58,8 @@ if __name__ == "__main__":
     data_loader.set_window(64)
     data_loader.set_leftover(4)
     plotter      = SignalPlotter(data_loader.prepare_timeline())
+    tracker      = EyeTracker()
+    tracker.run()
 
     while True:
         s = file_loader.get_sample()
@@ -68,13 +71,15 @@ if __name__ == "__main__":
 
         if signal:
             eog_analyser.load_signal_set(signal)
-            print eog_analyser.get_decisions(window = 10,
-                    window_seconds = False,
-                    jump = 1000,
-                    min_sec_diff = 1.5)
-            plotter._timeline = data_loader.prepare_timeline()
-            plotter.plot_set(signal)
-            plotter.show()
+            decisions = eog_analyser.get_decisions(window = 10,
+                                    window_seconds = False,
+                                    jump = 1000,
+                                    min_sec_diff = 1.5)
+            for direction, time in decisions:
+                tracker.move_square(direction)
+            #plotter._timeline = data_loader.prepare_timeline()
+            #plotter.plot_set(signal)
+            #plotter.show()
 
 
 

@@ -46,7 +46,11 @@ class SignalPlotter(object):
 
         for idx, chann in enumerate(channels):
             py.subplot(plot_num, 1, idx + 1)
-            self._prepare_axes(xlabel, ylabel, "Channel %s" % (idx + 1))
+            if idx == 0:
+                text = "horizontal"
+            else:
+                text = "vertical"
+            self._prepare_axes(xlabel, ylabel, text)
             py.plot(xdata, chann)
             if extra_info:
                 for (x, y, point_plot) in extra_info[idx + 1]:

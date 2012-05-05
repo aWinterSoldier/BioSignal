@@ -15,6 +15,7 @@ from lib.loader import DataLoader
 from lib.filter import BandpassFilter, BandstopFilter, LowpassFilter, HighpassFilter
 from lib.analysis import EogAnalyser
 from lib.plotting import SignalPlotter
+from lib.losowe import ImgDisplay
 
 class SampleAnalysis(ConfiguredMultiplexerServer):
     """A class responsible for handling signal message and making proper decision.
@@ -34,6 +35,8 @@ class SampleAnalysis(ConfiguredMultiplexerServer):
         self.data_loader.set_window(window)
         self.data_loader.set_leftover(leftover)
         self.plotter      = SignalPlotter(self.data_loader.prepare_timeline())
+        self.tracker      = EyeTracker()
+        self.tracker.run()
 
         self.ready()
         LOGGER.info("Sample analysis init finished!")
@@ -64,11 +67,13 @@ class SampleAnalysis(ConfiguredMultiplexerServer):
 
                 if signal:
                     self.eog_analyser.load_signal_set(signal)
-                    print self.eog_analyser.get_decisions(window = 10,
+                    decisions =  self.eog_analyser.get_decisions(window = 10,
                             window_seconds = False,
                             jump = 1000,
                             min_sec_diff = 1.5)
-                    #time.sleep(5)
+                    for direction, time in decisions:
+                        tracker.move_square(direction)                            
+                    
 
             # Having a new bunch of values one can fire some magic analysis and
             # generate decision ....

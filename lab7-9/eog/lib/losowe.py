@@ -1,61 +1,73 @@
+from threading import Lock, Thread
+
 import numpy as np
 import pylab as py
 import random
 import time
 import os
 
-class ImgDisplay(object):
+class ImgDisplay(Thread):
     def __init__(self):
-        pass
-    
-    def SquareAnimation(self):    
+        super(ImgDisplay, self).__init__()
+        self.position = None
+        self.grid = None
+        self.lock = Lock()
+        
+    def run(self):
+        self.square_animation()
+        
+    def square_animation(self):    
         py.figure(dpi = 150, figsize=(12,6))
         py.ion()
 
-        py.imshow(np.array([[0,0,0,0,0], [0,0,0,0,0], [0,0,1,0,0], [0,0,0,0,0], [0,0,0,0,0]]), cmap = py.cm.Blues, interpolation = 'nearest')
+        py.imshow(np.array([[0,0,0,0,0], [0,0,0,0,0], [0,0,1,0,0], [0,0,0,0,0], [0,0,0,0,0]]),
+                cmap = py.cm.Blues,
+                interpolation = 'nearest')
         time.sleep(2)
-
-        #punkty = []
-        for i in range(15):
-            P = random.randint(0,3)
-            
-            if P == 0:
-                M = np.array([[0,0,1,0,0], [0,0,0,0,0], [0,0,0,0,0], [0,0,0,0,0], [0,0,0,0,0]])
-                T = 'up'
-            if P == 1:
-                M = np.array([[0,0,0,0,0], [0,0,0,0,0], [1,0,0,0,0], [0,0,0,0,0], [0,0,0,0,0]])
-                T = 'left'
-            if P == 2:
-                M = np.array([[0,0,0,0,0], [0,0,0,0,0], [0,0,0,0,0], [0,0,0,0,0], [0,0,1,0,0]])
-                T = 'down'
-            if P == 3:
-                M = np.array([[0,0,0,0,0], [0,0,0,0,0], [0,0,0,0,1], [0,0,0,0,0], [0,0,0,0,0]])
-                
-                T = 'right'
-                        
-                    
+        while True:
+            p = random.randint(0,3)
+            with self.lock:
+                if p == 0:
+                    self.grid = np.array([[0,0,1,0,0], [0,0,0,0,0], [0,0,0,0,0], [0,0,0,0,0], [0,0,0,0,0]])
+                    self.position = "up"
+                elif p == 1:
+                    self.grid = np.array([[0,0,0,0,0], [0,0,0,0,0], [1,0,0,0,0], [0,0,0,0,0], [0,0,0,0,0]])
+                    self.position = "left"
+                elif p == 2:
+                    self.grid = np.array([[0,0,0,0,0], [0,0,0,0,0], [0,0,0,0,0], [0,0,0,0,0], [0,0,1,0,0]])
+                    self.position = "down"
+                elif p == 3:
+                    self.grid = np.array([[0,0,0,0,0], [0,0,0,0,0], [0,0,0,0,1], [0,0,0,0,0], [0,0,0,0,0]])
+                    self.position = "right"
+                   
             py.clf()
-            print T
-            py.imshow(M, cmap = py.cm.Blues, interpolation = 'nearest')
+
+            py.imshow(self.grid, cmap = py.cm.Blues, interpolation = 'nearest')
             py.draw()
             stop = time.time()
-            #punkty.append((T,stop))   
-            time.sleep(0.8)
+               
+            time.sleep(2)
             
             py.clf()
-            py.imshow(np.array([[0,0,0,0,0], [0,0,0,0,0], [0,0,1,0,0], [0,0,0,0,0], [0,0,0,0,0]]), cmap = py.cm.Blues, interpolation = 'nearest')
+            with self.lock:
+                self.position = "centre"
+                self.grid = np.array([[0,0,0,0,0], [0,0,0,0,0], [0,0,1,0,0], [0,0,0,0,0], [0,0,0,0,0]])
+            py.imshow(self.grid,
+                    cmap = py.cm.Blues,
+                    interpolation = 'nearest')
             py.draw()
             
-            
             time.sleep(2)
-            os.system('clear')
-        #print punkty
-        #File_name = 'punkty.dat'    
-        #with open(File_name, 'w') as f:
-        #     for i in  punkty:
-        #        f.write("%s, %s \n" % i)
             
-        py.show()
+    def get_position(self):
+        """
+        """
+        pos = None
+        with self.lock:
+            pos = self.position
+        return pos
 
-a = ImgDisplay()
-a.SquareAnimation()
+if __name__ == "__main__":
+    a = ImgDisplay()
+    a.start()
+    a.join()
