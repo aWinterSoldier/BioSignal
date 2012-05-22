@@ -79,7 +79,7 @@ class DataPreparator(object):
 
         return np.arange(start, end, ticks)
 
-class DataPreparator(DataPreparator):
+class GSRDataPreparator(DataPreparator):
     """
     """
     def __init__(self,
@@ -87,9 +87,9 @@ class DataPreparator(DataPreparator):
             filters = []):
         """
         """
-        super(DataPreparator, self).__init__(options,
-                2,
-                2,
+        super(GSRDataPreparator, self).__init__(options,
+                3,
+                3,
                 filters)
 
     def _bipolar_montage(self):

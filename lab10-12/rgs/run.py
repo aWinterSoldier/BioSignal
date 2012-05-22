@@ -5,7 +5,7 @@ from optparse import OptionParser
 from sys import exit
 
 from filter import BandstopFilter,  HighpassFilter
-from data import DataPreparator
+from data import GSRDataPreparator
 from plotting import SignalPlotter
 from analysis import EogAnalyser
 
@@ -49,15 +49,15 @@ if __name__ == '__main__':
 
     ## construct main agents
     band_stop       = BandstopFilter(options.frequency, [49,51])
-    band_stop2      = BandstopFilter(options.frequency, [99,101])
+    #band_stop2      = BandstopFilter(options.frequency, [99,101])
     high_pass       = HighpassFilter(options.frequency, 2)
-    data_preparator = DataPreparator(options,
-            [band_stop, band_stop2])
+    data_preparator = GSRDataPreparator(options,
+            [band_stop])
     data_preparator.load_file()
     plotter      = SignalPlotter(data_preparator.prepare_timeline())
 
     data_preparator.prepare_data()
-    data_preparator.apply_filters()
+    data_preparator.apply_filters(exclude = [3])
 
     # plot signal
     signal = data_preparator.montage_signal_set()
