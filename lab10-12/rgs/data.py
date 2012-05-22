@@ -65,8 +65,6 @@ class DataPreparator(object):
                 for filt in self._filters:
                     channel = filt.run(channel)
             return channel
-        for x in enumerate(self.cut_channels):
-            print x
         self.cut_channels = [apply_all(c, ix + 1) for ix, c in enumerate(self.cut_channels)]
 
     def prepare_timeline(self):

@@ -103,28 +103,73 @@ class SignalAnalyser(object):
         """
         return np.argmax(data) - np.argmin(data), \
             np.max(data) - np.min(data)
+            
+    def get_max_and_range(self, data):
+        """
+        """
+        max_abs = max(np.max(data), np.abs(np.min(data)))
+        return max_abs, \
+            np.max(data) - np.min(data)
 
-class EogAnalyser(SignalAnalyser):
+class GSRAnalyser(SignalAnalyser):
     """
     """
     def __init__(self, frequency, start_time):
         """
         """
-        self._directions = ["l", "r", "u", "d"]
-        super(EogAnalyser, self).__init__(frequency, start_time)
+        self._trigger_channel = 3
+        self.emo_reactions = []
+        super(GSRAnalyser, self).__init__(frequency, start_time)
 
-
+    def load_emo_reactions(self, filename, seconds = True):
+        """
+        """
+        trigger_times = self.get_trigger_times(seconds = seconds, 
+                min_sec_diff = 3)
+        line = None
+        with open(filename, 'r') as f:
+            line = f.readline()
+        line = line[1:-2].replace("'", '')
+        reactions = line.split(", ")
+        if not len(trigger_times) == len(reactions):
+            print len(trigger_times), len(reactions)
+            print "Warning: Trigger times don't match responses in file."
+        return zip(reactions, trigger_times)
+      
+    def get_trigger_times(self,
+            seconds = False,
+            min_sec_diff = 0.5):
+        """
+        """
+        trigger      = self._signal_set.get_channel(self._trigger_channel)
+        difference   = min_sec_diff * self._frequency
+        last_trigger = -difference - 1
+        times        = []
+        for i in range(1, len(trigger)):
+            if trigger[i - 1] < trigger[i] and\
+                    i - last_trigger > difference:
+                last_trigger = i
+                if seconds:
+                    times.append((i / self._frequency) + self._start_time)
+                else:
+                    times.append(i)
+        return times        
+        
+        
     def get_decisions(self,
-            jump = 1000,
-            window = 100,
+            filename,
+            jump = 500,
+            window = 20,
             window_seconds = False,
             seconds = False,
             min_sec_diff = 0.5):
         """
         """
-        hor = self._signal_set.get_channel(1)
-        ver = self._signal_set.get_channel(2)
-
+        gsr = self._signal_set.get_channel(1)
+        emo_reactions = self.load_emo_reactions(filename, seconds = False)
+        
+        trigger_times = [y for (x, y) in emo_reactions]
+        
         if window_seconds:
             window = int(window * self._frequency)
 
@@ -132,50 +177,77 @@ class EogAnalyser(SignalAnalyser):
             window += 1
         diameter = (window - 1) / 2
         start = diameter
-        end = len(hor) - diameter
+        end = len(gsr) - diameter
         step = diameter / 2
 
-        hvalues = []
-        vvalues = []
-        hlasts  = []
-        vlasts  = []
-        times = []
+        gsr_values = []
+        frames = []
         for i in xrange(start, end, step):
-            hpart = hor[i - diameter:i + diameter]
-            vpart = ver[i - diameter:i + diameter]
+            gsr_part = gsr[i - diameter:i + diameter]
 
-            times.append(i / self._frequency + self._start_time)
-            hlast, hrange = self.get_last_and_range(hpart)
-            vlast, vrange = self.get_last_and_range(vpart)
-            hvalues.append(hrange)
-            vvalues.append(vrange)
-            hlasts.append(hlast)
-            vlasts.append(vlast)
+            frames.append(i)
+            gsr_max, gsr_range = self.get_max_and_range(gsr_part)
+            gsr_values.append(gsr_range)
 
+        values = zip(frames, gsr_values)
         def printf(x):
             print x
         #map(printf, [x for x in zip(times, hvalues, vvalues)])
 
-        decisions = []
-        difference = min_sec_diff * self._frequency
-        last = -difference - 1
-        for i in xrange(len(times)):
-            time = times[i]
+        decisions = {"increase": [], "peak": []}
+        
+        #print trigger_times
+        #print values
 
-            if hvalues[i] > jump \
-                    and i - last > difference / step:
-                last = i
-                if hlasts[i] > 0:
-                    decisions.append(("r", time))
-                else:
-                    decisions.append(("l", time))
+        if len(trigger_times) == 0:
+            return decisions
+        
+        # remove all values before first trigger 
+        first_trigger = trigger_times[0]
+        first_value = 0
+        while values[first_value][0] < first_trigger:
+            first_value += 1
+        values = values[first_value:]
+        
+        trg_idx = 0
+        val_idx = 0
+        
+        peak_values = []
+        incr_values = []
+        new_peak = False
+        new_incr = False
+        remaining_triggers = True
+        #print trigger_times, values
+        
+        while val_idx < len(values):
+            if trg_idx < len(trigger_times):
+                trg_frame = trigger_times[trg_idx]
+            else:
+                remaining_triggers = False
+            val_frame, val = values[val_idx]
+            gsr_idx = val_idx * step + first_trigger
+            if remaining_triggers and val_frame >= trg_frame:
+                # analysing new trigger
+                new_peak = True
+                new_incr = True
+                trg_idx += 1
+            
+            if new_incr and val > jump:
+                new_incr = False
+                incr_values.append((float(val_frame) / self._frequency, abs(gsr[gsr_idx])))
+            
+            
+            if new_peak and val_idx > 0 and val_idx < len(values) - 1 and not new_incr:
+                prev_idx = gsr_idx - step
+                next_idx = gsr_idx + step
+                #print prev_idx, gsr_idx, next_idx, gsr[prev_idx], gsr[gsr_idx], gsr[next_idx]
+                if abs(gsr[gsr_idx]) > abs(gsr[prev_idx]) and\
+                        abs(gsr[gsr_idx]) > abs(gsr[next_idx]):
+                    new_peak = False
+                    peak_values.append((float(val_frame) / self._frequency, abs(gsr[gsr_idx])))
+            
+            val_idx += 1
 
-            if vvalues[i] > jump \
-                    and i - last > difference / step:
-                last = i
-                if vlasts[i] > 0:
-                    decisions.append(("d", time))
-                else:
-                    decisions.append(("u", time))
-
+        decisions["increase"] = incr_values
+        decisions["peak"] = peak_values
         return decisions

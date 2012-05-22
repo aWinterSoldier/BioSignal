@@ -7,7 +7,7 @@ from sys import exit
 from filter import BandstopFilter,  HighpassFilter
 from data import GSRDataPreparator
 from plotting import SignalPlotter
-from analysis import EogAnalyser
+from analysis import GSRAnalyser
 
 if __name__ == '__main__':
     # configure option parser
@@ -19,6 +19,12 @@ if __name__ == '__main__':
             type = "string",
             help = "Path to raw input file.",
             metavar = "FILE")
+    parser.add_option("-x",
+            "--decision-file",
+            dest = "decision_file",
+            type = "string",
+            help = "Path to decision file.",
+            metavar = "FILE")            
     parser.add_option("-s",
             "--start",
             dest = "start_time",
@@ -49,19 +55,34 @@ if __name__ == '__main__':
 
     ## construct main agents
     band_stop       = BandstopFilter(options.frequency, [49,51])
-    #band_stop2      = BandstopFilter(options.frequency, [99,101])
-    high_pass       = HighpassFilter(options.frequency, 2)
+    high_pass       = HighpassFilter(options.frequency, 0.1)
     data_preparator = GSRDataPreparator(options,
-            [band_stop])
+            [band_stop, high_pass])
     data_preparator.load_file()
     plotter      = SignalPlotter(data_preparator.prepare_timeline())
 
     data_preparator.prepare_data()
     data_preparator.apply_filters(exclude = [3])
 
-    # plot signal
     signal = data_preparator.montage_signal_set()
-    print signal.get_channel(1)
+    
+    analyser = GSRAnalyser(options.frequency, options.start_time)
+    analyser.load_signal_set(signal)
+
+    triggers = analyser.load_emo_reactions(options.decision_file)
+    dec_dict = analyser.get_decisions(options.decision_file, jump = 300)
+    increase = dec_dict["increase"]
+    peaks    = dec_dict["peak"]
+    print triggers
+    print increase
+    print peaks
+    
+    
+    
+    
+    
+    # plot signal
+    
     ######eog_analyser.load_signal_set(signal)
 
     plotter.plot_set(signal, ylabel = "potential [uV]")
