@@ -70,7 +70,10 @@ class SignalPlotter(object):
             xlabel = "time [s]",
             ylabel = "",
             title = "",
-            point_plot = False):
+            point_plot = None,
+            triggers = [],
+            slopes = [],
+            peaks = []):
         """
         """
         self._prepare_figure()
@@ -80,10 +83,17 @@ class SignalPlotter(object):
             xdata = xaxis
         else:
             xdata = self._timeline
-        if point_plot:
+        if point_plot is not None:
             py.plot(xdata, channel, point_plot)
         else:
             py.plot(xdata, channel)
+            
+        for (x, y) in triggers:
+            py.axvline(y, ymin = 0.3, ymax = 0.7, color = "black")
+        for (x, y) in slopes:
+            py.plot(x, y, "o", color = "green")
+        for (x, y) in peaks:
+            py.plot(x, -y, "x", color = "red")
         self._figure_done = True
 
     def plot_channel_list(self,

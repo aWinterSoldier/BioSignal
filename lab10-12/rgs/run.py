@@ -87,17 +87,18 @@ if __name__ == '__main__':
     neu_lats = []
     neu_grow = []
     for i in xrange(len(triggers)):
-       t = triggers[i][1]
-       if triggers[i][0] == 'n':
-           # neutral
-           neu_amps.append(peaks[i][1])
-           neu_lats.append(peaks[i][0] - t)
-           neu_grow.append(peaks[i][0] - increase[i][0])
-       else:
-           #emo
-           emo_amps.append(peaks[i][1])
-           emo_lats.append(peaks[i][0] - t)
-           emo_grow.append(peaks[i][0] - increase[i][0])
+        t = triggers[i][1]
+        if peaks[i] is not None:
+            if triggers[i][0] == 'n':
+                # neutral
+                neu_amps.append(peaks[i][1])
+                neu_lats.append(peaks[i][0] - t)
+                neu_grow.append(peaks[i][0] - increase[i][0])
+            else:
+                #emo
+                emo_amps.append(peaks[i][1])
+                emo_lats.append(peaks[i][0] - t)
+                emo_grow.append(peaks[i][0] - increase[i][0])
     
     print "Emo:"
     print "Amplitude: %.2f | %.2f" % (np.mean(emo_amps), np.max(emo_amps))
@@ -110,5 +111,11 @@ if __name__ == '__main__':
     print "Growth time: %.2f | %.2f" % (np.mean(neu_grow), np.max(neu_grow))
     
     plotter.plot_set(signal, ylabel = "potential [uV]")
-
+    plotter.plot_channel(signal.get_channel(1), 
+                         triggers = triggers,
+                         slopes = increase,
+                         peaks = peaks,
+                         ylabel = "potential [uV]",
+                         title = "Hand electrode")
+    
     plotter.show()

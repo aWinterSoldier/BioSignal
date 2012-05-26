@@ -189,7 +189,7 @@ class GSRAnalyser(SignalAnalyser):
             base = sec[0]
             try:
                 slope_start = (i for i, v in enumerate(sec) if base - v > jump).next()
-                incr_values.append((float(slope_start + this_trg) / self._frequency, abs(sec[slope_start])))
+                incr_values.append((float(slope_start + this_trg) / self._frequency, sec[slope_start]))
                 peak_values.append((float(np.argmin(sec) + this_trg) / self._frequency, abs(np.min(sec))))
             except StopIteration:
                 incr_values.append(None)
