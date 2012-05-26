@@ -1,11 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import numpy as np
+
 from optparse import OptionParser
 from sys import exit
 
 from filter import BandstopFilter,  HighpassFilter
-from data import GSRDataPreparator
+from data import GSRDataPreparator, NameGSRDataPreparator
 from plotting import SignalPlotter
 from analysis import GSRAnalyser
 
@@ -70,21 +72,43 @@ if __name__ == '__main__':
     analyser.load_signal_set(signal)
 
     triggers = analyser.load_emo_reactions(options.decision_file)
-    dec_dict = analyser.get_decisions(options.decision_file, jump = 300)
+    dec_dict = analyser.get_decisions(options.decision_file, jump = 100)
     increase = dec_dict["increase"]
     peaks    = dec_dict["peak"]
-    print triggers
-    print increase
-    print peaks
-    
-    
-    
-    
-    
-    # plot signal
-    
-    ######eog_analyser.load_signal_set(signal)
+    print len(triggers), triggers
+    print len(increase), increase
+    print len(peaks), peaks
 
+    emo_amps = []
+    emo_lats = []
+    emo_grow = []
+    
+    neu_amps = []
+    neu_lats = []
+    neu_grow = []
+    for i in xrange(len(triggers)):
+       t = triggers[i][1]
+       if triggers[i][0] == 'n':
+           # neutral
+           neu_amps.append(peaks[i][1])
+           neu_lats.append(peaks[i][0] - t)
+           neu_grow.append(peaks[i][0] - increase[i][0])
+       else:
+           #emo
+           emo_amps.append(peaks[i][1])
+           emo_lats.append(peaks[i][0] - t)
+           emo_grow.append(peaks[i][0] - increase[i][0])
+    
+    print "Emo:"
+    print "Amplitude: %.2f | %.2f" % (np.mean(emo_amps), np.max(emo_amps))
+    print "Latency: %.2f | %.2f" % (np.mean(emo_lats), np.max(emo_lats))
+    print "Growth time: %.2f | %.2f" % (np.mean(emo_grow), np.max(emo_grow))
+    
+    print "Neutral:"
+    print "Amplitude: %.2f | %.2f" % (np.mean(neu_amps), np.max(neu_amps))
+    print "Latency: %.2f | %.2f" % (np.mean(neu_lats), np.max(neu_lats))
+    print "Growth time: %.2f | %.2f" % (np.mean(neu_grow), np.max(neu_grow))
+    
     plotter.plot_set(signal, ylabel = "potential [uV]")
 
     plotter.show()

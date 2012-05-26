@@ -30,6 +30,7 @@ class SignalPlotter(object):
             xaxis = None,
             xlabel = "time [s]",
             ylabel = "",
+            ylim = None,
             extra_info = {}):
         """
         """
@@ -46,8 +47,14 @@ class SignalPlotter(object):
 
         for idx, chann in enumerate(channels):
             py.subplot(plot_num, 1, idx + 1)
-            self._prepare_axes(xlabel, ylabel, "Channel %s" % (idx + 1))
+            if idx == 0:
+                title = "Hand electrodes"
+            else:
+                title = "Finger electrodes"
+            self._prepare_axes(xlabel, ylabel, title)
             py.plot(xdata, chann)
+            if ylim is not None:
+                py.ylim(ylim)
             if extra_info:
                 for (x, y, point_plot) in extra_info[idx + 1]:
                     if point_plot:

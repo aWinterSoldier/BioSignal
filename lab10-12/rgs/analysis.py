@@ -158,11 +158,7 @@ class GSRAnalyser(SignalAnalyser):
         
     def get_decisions(self,
             filename,
-            jump = 500,
-            window = 20,
-            window_seconds = False,
-            seconds = False,
-            min_sec_diff = 0.5):
+            jump = 100):
         """
         """
         gsr = self._signal_set.get_channel(1)
@@ -170,84 +166,35 @@ class GSRAnalyser(SignalAnalyser):
         
         trigger_times = [y for (x, y) in emo_reactions]
         
-        if window_seconds:
-            window = int(window * self._frequency)
-
-        if window % 2 == 0:
-            window += 1
-        diameter = (window - 1) / 2
-        start = diameter
-        end = len(gsr) - diameter
-        step = diameter / 2
-
-        gsr_values = []
-        frames = []
-        for i in xrange(start, end, step):
-            gsr_part = gsr[i - diameter:i + diameter]
-
-            frames.append(i)
-            gsr_max, gsr_range = self.get_max_and_range(gsr_part)
-            gsr_values.append(gsr_range)
-
-        values = zip(frames, gsr_values)
-        def printf(x):
-            print x
-        #map(printf, [x for x in zip(times, hvalues, vvalues)])
-
         decisions = {"increase": [], "peak": []}
         
-        #print trigger_times
-        #print values
-
         if len(trigger_times) == 0:
             return decisions
         
         # remove all values before first trigger 
-        first_trigger = trigger_times[0]
-        first_value = 0
-        while values[first_value][0] < first_trigger:
-            first_value += 1
-        values = values[first_value:]
-        
-        trg_idx = 0
-        val_idx = 0
-        
+        values = gsr
+       
         peak_values = []
         incr_values = []
-        new_peak = False
-        new_incr = False
-        remaining_triggers = True
-        #print trigger_times, values
-        
-        while val_idx < len(values):
-            if trg_idx < len(trigger_times):
-                trg_frame = trigger_times[trg_idx]
-            else:
-                remaining_triggers = False
-            val_frame, val = values[val_idx]
-            gsr_idx = val_idx * step + first_trigger
-            if remaining_triggers and val_frame >= trg_frame:
-                # analysing new trigger
-                new_peak = True
-                new_incr = True
-                trg_idx += 1
-            
-            if new_incr and val > jump:
-                new_incr = False
-                incr_values.append((float(val_frame) / self._frequency, abs(gsr[gsr_idx])))
-            
-            
-            if new_peak and val_idx > 0 and val_idx < len(values) - 1 and not new_incr:
-                prev_idx = gsr_idx - step
-                next_idx = gsr_idx + step
-                #print prev_idx, gsr_idx, next_idx, gsr[prev_idx], gsr[gsr_idx], gsr[next_idx]
-                if abs(gsr[gsr_idx]) > abs(gsr[prev_idx]) and\
-                        abs(gsr[gsr_idx]) > abs(gsr[next_idx]):
-                    new_peak = False
-                    peak_values.append((float(val_frame) / self._frequency, abs(gsr[gsr_idx])))
-            
-            val_idx += 1
 
+        for trg_idx in xrange(len(trigger_times)):
+            this_trg = trigger_times[trg_idx]
+            if trg_idx < len(trigger_times) - 1:
+                next_trg = trigger_times[trg_idx + 1]
+            else:
+                next_trg = len(values) - 1
+           
+            sec = values[this_trg:next_trg]
+            
+            base = sec[0]
+            try:
+                slope_start = (i for i, v in enumerate(sec) if base - v > jump).next()
+                incr_values.append((float(slope_start + this_trg) / self._frequency, abs(sec[slope_start])))
+                peak_values.append((float(np.argmin(sec) + this_trg) / self._frequency, abs(np.min(sec))))
+            except StopIteration:
+                incr_values.append(None)
+                peak_values.append(None)
+            
         decisions["increase"] = incr_values
         decisions["peak"] = peak_values
         return decisions

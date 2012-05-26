@@ -102,6 +102,32 @@ class GSRDataPreparator(DataPreparator):
         return SignalSet(montage,
                 self.prepare_timeline(),
                 self._channel_number)
+                
+class NameGSRDataPreparator(DataPreparator):
+    """
+    """
+    def __init__(self,
+            options,
+            filters = []):
+        """
+        """
+        super(NameGSRDataPreparator, self).__init__(options,
+                2,
+                2,
+                filters)
+
+    def _bipolar_montage(self):
+        """
+        """
+        return self.cut_channels
+
+    def montage_signal_set(self):
+        """
+        """
+        montage = self._bipolar_montage()
+        return SignalSet(montage,
+                self.prepare_timeline(),
+                self._channel_number)                
 
 class SignalSet:
     """
