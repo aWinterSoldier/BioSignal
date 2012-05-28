@@ -178,9 +178,9 @@ class GSRAnalyser(SignalAnalyser):
     def get_window_half_life(self, window):
         peak_time = np.argmin(window)
         half = window[peak_time]/2.
-		for i in xrange(len(window[peak_time:]):
-			if window[peak_time:][i] > half:
-				return i/self._frequency
+	for i in xrange(len(window[peak_time:]):
+		if window[peak_time:][i] > half:
+			return i/self._frequency
                 
                 
 #####################################################################################################################             
