@@ -161,7 +161,7 @@ class GSRAnalyser(SignalAnalyser):
         windows = []
         gsr = self._signal_set.get_channel(1)
         trigger_times = self.get_trigger_times()
-        for i in range(len(trigger_times)):
+        for i in xrange(len(trigger_times)):
             windows.append(gsr[trigger_times[i]:trigger_times[i+1]])
         if flattened:
             for window in range(len(windows)):
@@ -171,12 +171,18 @@ class GSRAnalyser(SignalAnalyser):
 
     def flatten_windowed_signal(self, window):#splaszcza frament sygnalu odejmujac od kazdego z elementow srednia
         mean = np.mean(window)
-        for i in range(len(window)):
+        for i in xrange(len(window)):
             window[i] = window[i] - mean
         return window               
                                
-    #def get_window_half_life(self, window):
-    #nie mam pomyslu jak liczyc czas polowicznego zaniku. Pamietam tylko ze mialo byc cos z okienkowaniem i srednia.                     
+    def get_window_half_life(self, window):
+        peak_time = np.argmin(window)
+        half = window[peak_time]/2.
+		for i in xrange(len(window[peak_time:]):
+            if window[peak_time:][i] > half:
+                return i/self._frequency
+                
+                
 #####################################################################################################################             
         
     def get_decisions(self,
