@@ -103,7 +103,7 @@ class SignalAnalyser(object):
         """
         return np.argmax(data) - np.argmin(data), \
             np.max(data) - np.min(data)
-            
+
     def get_max_and_range(self, data):
         """
         """
@@ -124,7 +124,7 @@ class GSRAnalyser(SignalAnalyser):
     def load_emo_reactions(self, filename, seconds = True):
         """
         """
-        trigger_times = self.get_trigger_times(seconds = seconds, 
+        trigger_times = self.get_trigger_times(seconds = seconds,
                 min_sec_diff = 3)
         line = None
         with open(filename, 'r') as f:
@@ -135,7 +135,7 @@ class GSRAnalyser(SignalAnalyser):
             print len(trigger_times), len(reactions)
             print "Warning: Trigger times don't match responses in file."
         return zip(reactions, trigger_times)
-      
+
     def get_trigger_times(self,
             seconds = False,
             min_sec_diff = 0.5):
@@ -153,9 +153,9 @@ class GSRAnalyser(SignalAnalyser):
                     times.append((i / self._frequency) + self._start_time)
                 else:
                     times.append(i)
-        return times    
-        
-#zadanie 3        
+        return times
+
+#zadanie 3
 #####################################################################################################################
     def get_windows(self, flatten = False):#dzieli sygnal na okienka od trggera do triggera
         windows = []
@@ -165,26 +165,26 @@ class GSRAnalyser(SignalAnalyser):
             windows.append(gsr[trigger_times[i]:trigger_times[i+1]])
         if flattened:
             for window in range(len(windows)):
-                windows[i] = normalize_window(windows[i])              
-        else:                   
+                windows[i] = normalize_window(windows[i])
+        else:
             return windows
 
     def flatten_windowed_signal(self, window):#splaszcza frament sygnalu odejmujac od kazdego z elementow srednia
         mean = np.mean(window)
         for i in xrange(len(window)):
             window[i] = window[i] - mean
-        return window               
-                               
+        return window
+
     def get_window_half_life(self, window):
         peak_time = np.argmin(window)
         half = window[peak_time]/2.
-	for i in xrange(len(window[peak_time:]):
+	for i in xrange(len(window[peak_time:])):
 		if window[peak_time:][i] > half:
 			return i/self._frequency
-                
-                
-#####################################################################################################################             
-        
+
+
+#####################################################################################################################
+
     def get_decisions(self,
             filename,
             jump = 100):
@@ -192,19 +192,20 @@ class GSRAnalyser(SignalAnalyser):
         """
         gsr = self._signal_set.get_channel(1)
         emo_reactions = self.load_emo_reactions(filename, seconds = False)
-        
+
         trigger_times = [y for (x, y) in emo_reactions]
-        
+
         decisions = {"increase": [], "peak": []}
-        
+
         if len(trigger_times) == 0:
             return decisions
-        
-        # remove all values before first trigger 
+
+        # remove all values before first trigger
         values = gsr
-       
+
         peak_values = []
         incr_values = []
+        half_life   = []
 
         for trg_idx in xrange(len(trigger_times)):
             this_trg = trigger_times[trg_idx]
@@ -212,18 +213,28 @@ class GSRAnalyser(SignalAnalyser):
                 next_trg = trigger_times[trg_idx + 1]
             else:
                 next_trg = len(values) - 1
-           
+
             sec = values[this_trg:next_trg]
-            
+
             base = sec[0]
             try:
                 slope_start = (i for i, v in enumerate(sec) if base - v > jump).next()
                 incr_values.append((float(slope_start + this_trg) / self._frequency, sec[slope_start]))
                 peak_values.append((float(np.argmin(sec) + this_trg) / self._frequency, abs(np.min(sec))))
+                min_frame = np.argmin(sec)
+                min_value = abs(np.min(sec))
             except StopIteration:
                 incr_values.append(None)
                 peak_values.append(None)
-            
+
+            try:
+                half_frame = (i for i, v in enumerate(sec[min_frame:]) if abs(v) < min_value / 2).next()
+                half_life.append(half_frame / self._frequency)
+            except StopIteration:
+                print "here"
+                half_life.append(len(sec[min_frame:]) / self._frequency)
+
         decisions["increase"] = incr_values
         decisions["peak"] = peak_values
+        decisions["half"] = half_life
         return decisions

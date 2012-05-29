@@ -26,7 +26,7 @@ if __name__ == '__main__':
             dest = "decision_file",
             type = "string",
             help = "Path to decision file.",
-            metavar = "FILE")            
+            metavar = "FILE")
     parser.add_option("-s",
             "--start",
             dest = "start_time",
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     data_preparator.apply_filters(exclude = [3])
 
     signal = data_preparator.montage_signal_set()
-    
+
     analyser = GSRAnalyser(options.frequency, options.start_time)
     analyser.load_signal_set(signal)
 
@@ -75,47 +75,59 @@ if __name__ == '__main__':
     dec_dict = analyser.get_decisions(options.decision_file, jump = 100)
     increase = dec_dict["increase"]
     peaks    = dec_dict["peak"]
+    half     = dec_dict["half"]
     print len(triggers), triggers
     print len(increase), increase
     print len(peaks), peaks
+    print len(half), half
 
     emo_amps = []
     emo_lats = []
     emo_grow = []
-    
+    emo_half = []
+
     neu_amps = []
     neu_lats = []
     neu_grow = []
+    neu_half = []
     for i in xrange(len(triggers)):
         t = triggers[i][1]
         if peaks[i] is not None:
             if triggers[i][0] == 'n':
                 # neutral
                 neu_amps.append(peaks[i][1])
-                neu_lats.append(peaks[i][0] - t)
+                neu_lats.append(increase[i][0] - t)
                 neu_grow.append(peaks[i][0] - increase[i][0])
+                neu_half.append(half[i])
             else:
                 #emo
                 emo_amps.append(peaks[i][1])
-                emo_lats.append(peaks[i][0] - t)
+                emo_lats.append(increase[i][0] - t)
                 emo_grow.append(peaks[i][0] - increase[i][0])
-    
+                emo_half.append(half[i])
+
     print "Emo:"
     print "Amplitude: %.2f | %.2f" % (np.mean(emo_amps), np.max(emo_amps))
     print "Latency: %.2f | %.2f" % (np.mean(emo_lats), np.max(emo_lats))
     print "Growth time: %.2f | %.2f" % (np.mean(emo_grow), np.max(emo_grow))
-    
+    print "Half life: %.2f | %.2f" % (np.mean(emo_half), np.max(emo_half))
+
     print "Neutral:"
     print "Amplitude: %.2f | %.2f" % (np.mean(neu_amps), np.max(neu_amps))
     print "Latency: %.2f | %.2f" % (np.mean(neu_lats), np.max(neu_lats))
     print "Growth time: %.2f | %.2f" % (np.mean(neu_grow), np.max(neu_grow))
-    
+    print "Half life: %.2f | %.2f" % (np.mean(neu_half), np.max(neu_half))
+
+    print "\n\n"
+    print emo_half, np.mean(emo_half)
+    print neu_half, np.mean(neu_half)
+
     plotter.plot_set(signal, ylabel = "potential [uV]")
-    plotter.plot_channel(signal.get_channel(1), 
+    plotter.plot_channel(signal.get_channel(1),
                          triggers = triggers,
                          slopes = increase,
                          peaks = peaks,
                          ylabel = "potential [uV]",
                          title = "Hand electrode")
-    
+
     plotter.show()
