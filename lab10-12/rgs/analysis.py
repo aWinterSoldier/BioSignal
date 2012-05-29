@@ -231,7 +231,6 @@ class GSRAnalyser(SignalAnalyser):
                 half_frame = (i for i, v in enumerate(sec[min_frame:]) if abs(v) < min_value / 2).next()
                 half_life.append(half_frame / self._frequency)
             except StopIteration:
-                print "here"
                 half_life.append(len(sec[min_frame:]) / self._frequency)
 
         decisions["increase"] = incr_values

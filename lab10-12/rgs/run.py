@@ -106,6 +106,10 @@ if __name__ == '__main__':
                 emo_grow.append(peaks[i][0] - increase[i][0])
                 emo_half.append(half[i])
 
+    print emo_grow
+    emo_grow.pop(3)
+    emo_grow.pop(4)
+    print emo_grow
     print "Emo:"
     print "Amplitude: %.2f | %.2f" % (np.mean(emo_amps), np.max(emo_amps))
     print "Latency: %.2f | %.2f" % (np.mean(emo_lats), np.max(emo_lats))
